@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Wholesale Order Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+    label { display:block; margin-top:16px; font-weight:600; }
+    input, select, textarea, button { width:100%; padding:10px; margin-top:6px; box-sizing:border-box; }
+    button { cursor:pointer; }
+    .note { font-size: 0.9rem; color: #555; margin-top: 6px;}
+    .success { margin-top:14px; padding:10px; border:1px solid #cfc; background:#f6fff6; display:none; }
+    .error { margin-top:14px; padding:10px; border:1px solid #fcc; background:#fff6f6; display:none; }
+  </style>
+</head>
+<body>
+  <h1>Wholesale Order Form</h1>
+  <form id="orderForm">
+    <label>Company Name
+      <input type="text" name="company" placeholder="Company Inc." required>
+    </label>
+
+    <label>Contact Name
+      <input type="text" name="contact" placeholder="Jane Doe" required>
+    </label>
+
+    <label>Email
+      <input type="email" name="email" placeholder="you@example.com" required>
+    </label>
+
+    <!-- You can edit this list anytime -->
+    <label>Product
+      <select name="product" required>
+        <option value="" disabled selected>Select a product</option>
+        <option>Grenaudière Phénomène (NA)</option>
+        <option>Edenvale (NA)</option>
+        <option>Lautus Chardonnay (NA)</option>
+        <option>Roots Divino Blanco (NA)</option>
+        <option>Monday Gin (NA)</option>
+      </select>
+      <div class="note">Update this list anytime in GitHub.</div>
+    </label>
+
+    <label>Quantity (bottles)
+      <input type="number" name="quantity" min="1" step="1" required>
+    </label>
+
+    <label>Notes
+      <textarea name="notes" rows="4" placeholder="Delivery notes, requested ship date, etc."></textarea>
+    </label>
+
+    <button type="submit">Submit Order</button>
+  </form>
+
+  <div id="success" class="success">✅ Order submitted! We’ll be in touch shortly.</div>
+  <div id="error" class="error">❌ Something went wrong. Please try again.</div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvmKnNzslxSvxQXA9Lj6pHf1NIVKez-RH3JPiWXEeaxbCe-LwViqVw41rOjbxx1ygZ/exec";
+
+    document.getElementById("orderForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const formData = Object.fromEntries(new FormData(this).entries());
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData)
+        });
+
+        if (!res.ok) throw new Error("Network response was not ok");
+
+        document.getElementById("success").style.display = "block";
+        document.getElementById("error").style.display = "none";
+        this.reset();
+      } catch (err) {
+        document.getElementById("success").style.display = "none";
+        document.getElementById("error").style.display = "block";
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
