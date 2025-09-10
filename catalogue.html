@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Dry Variety — Wholesale Pricing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- HERO / BRAND -->
+  <header class="hero">
+    <div class="wrap brandbar">
+      <div class="logo">
+        <img src="LOGO_URL_HERE" alt="Dry Variety" />
+      </div>
+      <div class="contact">
+        <div><b>To order:</b></div>
+        <div>sales@dryvariety.com • 519-495-7610</div>
+        <div>Mon–Fri 9AM–5PM EST</div>
+      </div>
+    </div>
+
+    <h1>Dry Variety</h1>
+    <h2>Wholesale Pricing</h2>
+
+    <div class="ribbon">
+      <div class="wrap">
+        <div>🚚 <b>Minimum Order: $300 CAD</b> — Mix & match any products.</div>
+        <div>📦 <b>Free shipping</b> on orders over $500!</div>
+        <!-- Link back to your order form -->
+        <a class="btn" href="index.html">👉 Start Order</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <div class="wrap">
+      <input id="q" class="search" placeholder="Search for a product..." />
+      <select id="styleFilter" class="select">
+        <option value="">Filter by style</option>
+        <option>Red</option><option>White</option><option>Rosé</option>
+        <option>Sparkling</option><option>Aperitif</option><option>Spirit</option><option>Beer</option>
+      </select>
+      <select id="sortBy" class="select">
+        <option value="default">Sort by</option>
+        <option value="priceAsc">Price (low → high)</option>
+        <option value="priceDesc">Price (high → low)</option>
+        <option value="alpha">A–Z</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- CATALOG -->
+  <main class="wrap" id="catalog"></main>
+
+  <footer class="footer">
+    <div class="wrap small">© Dry Variety — Wholesale</div>
+  </footer>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvmKnNzslxSvxQXA9Lj6pHf1NIVKez-RH3JPiWXEeaxbCe-LwViqVw41rOjbxx1ygZ/exec"; // Google Apps Script /exec
+    const $ = (s) => document.querySelector(s);
+
+    const catalog = $("#catalog");
+    const q = $("#q");
+    const styleFilter = $("#styleFilter");
+    const sortBy = $("#sortBy");
+
+    function money(n){ return `$${(+n).toFixed(2)}`; }
+
+    async function loadProducts(){
+      const res = await fetch(SCRIPT_URL);
+      const { products = [] } = await res.json();
+      let items = products.slice();
+
+      function applyFilters(){
+        let list = items.filter(p => String(p.active).toLowerCase() === 'true');
+
+        const query = q.value.trim().toLowerCase();
+        if (query) {
+          list = list.filter(p =>
+            String(p.title).toLowerCase().includes(query) ||
+            String(p.brand).toLowerCase().includes(query) ||
+            String(p.style).toLowerCase().includes(query)
+          );
+        }
+
+        const style = styleFilter.value.trim();
+        if (style) list = list.filter(p => String(p.style).toLowerCase() === style.toLowerCase());
+
+        switch (sortBy.value) {
+          case "priceAsc":  list.sort((a,b)=> (+a.unit_price||0) - (+b.unit_price||0)); break;
+          case "priceDesc": list.sort((a,b)=> (+b.unit_price||0) - (+a.unit_price||0)); break;
+          case "alpha":     list.sort((a,b)=> String(a.title).localeCompare(String(b.title))); break;
+          default: break;
+        }
+
+        renderGrouped(list);
+      }
+
+      q.addEventListener('input', applyFilters);
+      styleFilter.addEventListener('change', applyFilters);
+      sortBy.addEventListener('change', applyFilters);
+
+      applyFilters();
+    }
+
+    function renderGrouped(list){
+      if (!list.length) { catalog.innerHTML = "<p>No products found.</p>"; return; }
+
+      const byBrand = list.reduce((acc, p) => {
+        const key = p.brand || "Other";
+        (acc[key] = acc[key] || []).push(p);
+        return acc;
+      }, {});
+
+      catalog.innerHTML = Object.keys(byBrand).sort().map(brand => {
+        const rows = byBrand[brand].map(p => `
+          <tr class="row">
+            <td class="cell img"><img src="${p.image_url||''}" alt="${p.title||''}"></td>
+            <td class="cell">
+              <div><b>${p.title||''}</b></div>
+              <div class="small muted">${p.style||''}</div>
+            </td>
+            <td class="cell">${p.size_text||''}</td>
+            <td class="cell right">${money(p.unit_price||0)}</td>
+            <td class="cell right">${money(p.case_price||0)}</td>
+          </tr>
+        `).join("");
+
+        const size = byBrand[brand][0]?.case_size || '';
+        return `
+          <div class="brand-head">${brand}</div>
+          <table class="table">
+            <thead class="thead">
+              <tr>
+                <th class="cell">Image</th>
+                <th class="cell">Product</th>
+                <th class="cell">Size</th>
+                <th class="cell right">Wholesale</th>
+                <th class="cell right">Case (x${size})</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      }).join("");
+    }
+
+    loadProducts().catch(err => {
+      console.error(err);
+      catalog.innerHTML = "<p>Could not load products.</p>";
+    });
+  </script>
+</body>
+</html>
