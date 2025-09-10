@@ -56,31 +56,42 @@
   <div id="success" class="success">✅ Order submitted! We’ll be in touch shortly.</div>
   <div id="error" class="error">❌ Something went wrong. Please try again.</div>
 
-  <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvmKnNzslxSvxQXA9Lj6pHf1NIVKez-RH3JPiWXEeaxbCe-LwViqVw41rOjbxx1ygZ/exec";
+<script>
+  const SCRIPT_URL = "YOUR_EXEC_URL_HERE";
 
-    document.getElementById("orderForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const formData = Object.fromEntries(new FormData(this).entries());
+  const successEl = document.getElementById("success");
+  const errorEl = document.getElementById("error");
 
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData)
-        });
+  document.getElementById("orderForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(this).entries());
 
-        if (!res.ok) throw new Error("Network response was not ok");
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
 
-        document.getElementById("success").style.display = "block";
-        document.getElementById("error").style.display = "none";
-        this.reset();
-      } catch (err) {
-        document.getElementById("success").style.display = "none";
-        document.getElementById("error").style.display = "block";
-        console.error(err);
+      const text = await res.text(); // read response body
+
+      if (!res.ok) {
+        errorEl.style.display = "block";
+        successEl.style.display = "none";
+        errorEl.textContent = `❌ Error: HTTP ${res.status} – ${text}`;
+        return;
       }
-    });
-  </script>
+
+      successEl.style.display = "block";
+      errorEl.style.display = "none";
+      this.reset();
+    } catch (err) {
+      errorEl.style.display = "block";
+      successEl.style.display = "none";
+      errorEl.textContent = `❌ Network error: ${String(err)}`;
+    }
+  });
+</script>
+
 </body>
 </html>
